@@ -12,14 +12,10 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-<<<<<<< HEAD
-add_executable(main src/main.cpp)
-=======
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
 add_executable(main ${SOURCES})
 
 target_include_directories(main PRIVATE src/include)
->>>>>>> 446b816 (Basic grid and object handling)
 target_compile_features(main PRIVATE cxx_std_17)
 target_link_libraries(main PRIVATE SFML::Graphics)
