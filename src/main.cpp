@@ -6,20 +6,35 @@
 #define PATH "../../src"
 #define SPRITE(name) PATH "/Sprites/" name ".png"
 
-enum directions { down, right, up, left };
+enum directions
+{
+    down,
+    right,
+    up,
+    left
+};
+enum windowstate
+{
+    WINDOWED,
+    FULLSCREEN
+};
 
-int main() {
+bool WindowState = FULLSCREEN;
+
+int main()
+{
     unsigned int width = 1920;
     unsigned int height = 1080;
 
-    auto window =
-        sf::RenderWindow(sf::VideoMode({width, height}), "Puzzletorio");
-    window.setFramerateLimit(144);
+    sf::VideoMode mode = sf::VideoMode::getDesktopMode();
+    sf::RenderWindow window(mode, "Puzzletorio", (WindowState ? sf::State::Fullscreen : sf::State::Windowed));
+    window.setFramerateLimit(60);
 
     // Tile system
     sf::Texture tileTexture;
 
-    if (!tileTexture.loadFromFile(SPRITE("tile_32px"))) {
+    if (!tileTexture.loadFromFile(SPRITE("tile_32px")))
+    {
         std::cerr << "ERROR::COULD NOT LOAD FILE::Sprites/tile_32px.png"
                   << std::endl;
         return -1;
@@ -33,7 +48,8 @@ int main() {
 
     sf::Texture tileHighlightedTexture;
 
-    if (!tileHighlightedTexture.loadFromFile(SPRITE("tile_highlighted_32px"))) {
+    if (!tileHighlightedTexture.loadFromFile(SPRITE("tile_highlighted_32px")))
+    {
         std::cerr
             << "ERROR::COULD NOT LOAD FILE::Sprites/tile_highlighted_32px.png"
             << std::endl;
@@ -48,7 +64,8 @@ int main() {
     // Toolbar
     sf::Texture toolbarTexture;
 
-    if (!toolbarTexture.loadFromFile(SPRITE("toolbar_96px"))) {
+    if (!toolbarTexture.loadFromFile(SPRITE("toolbar_96px")))
+    {
         std::cerr << "ERROR::COULD NOT LOAD FILE::Sprites/toolbar_96px.png"
                   << std::endl;
         return -1;
@@ -71,23 +88,45 @@ int main() {
     Grid.addObj(Hopper, 15, 6);
     Grid.addObj(Furnace, 15, 7);
     Grid.addObj(Iron_source, 15, 5);
-
+    bool ctrlEnterPressed = false;
     // Main loop
-    while (window.isOpen()) {
-        while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
+    while (window.isOpen())
+    {
+
+        while (const std::optional event = window.pollEvent())
+        {
+            if (event->is<sf::Event::Closed>())
+            {
                 window.close();
-            } else if (const auto* keyPreseed =
-                           event->getIf<sf::Event::KeyPressed>()) {
-                if (keyPreseed->scancode == sf::Keyboard::Scancode::Escape) {
+            }
+            else if (const auto *keyPreseed =
+                         event->getIf<sf::Event::KeyPressed>())
+            {
+                if (keyPreseed->scancode == sf::Keyboard::Scancode::Escape)
+                {
                     window.close();
                 }
             }
         }
+
+        bool shiftDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RShift);
+        bool enterDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Enter);
+
+        if (shiftDown && enterDown && !ctrlEnterPressed)
+        {
+            ctrlEnterPressed = true;
+            window = sf::RenderWindow(mode, "Puzzletorio", (WindowState ? sf::State::Windowed : sf::State::Fullscreen));
+            WindowState = !WindowState;
+        }
+        if (!shiftDown || !enterDown)
+            ctrlEnterPressed = false;
+
+        // Highlight
         sf::Vector2i vMousePosition = sf::Mouse::getPosition(window);
         auto pos32 = sf::Vector2f((vMousePosition.x / 32) * 32,
                                   (vMousePosition.y / 32) * 32);
-        if (pos32.y < 960) {
+        if (pos32.y < 960)
+        {
             tileHighlighted.setPosition(pos32);
         }
 
