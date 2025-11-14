@@ -31,7 +31,13 @@ grid_system::grid_system() {
     }
 }
 
-void grid_system::addObj(obj object, unsigned x, unsigned y) {
+void grid_system::addObj(obj &object, unsigned x, unsigned y) {
     object.objRect.setPosition({32*x, 32*y});
     grid[x][y] = object;
+}
+
+void grid_system::movePos(unsigned x, unsigned y, sf::Vector2i &vMousePosition) {
+    this->grid[x][y].objRect.setPosition({(vMousePosition.x/32)*32, (vMousePosition.y/32)*32});
+    // this->grid[(vMousePosition.x/32)][(vMousePosition.y/32)] = this->grid[x][y];
+    std::swap(this->grid[(vMousePosition.x/32)][(vMousePosition.y/32)], this->grid[x][y]);
 }

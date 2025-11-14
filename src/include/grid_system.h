@@ -1,3 +1,4 @@
+#pragma once
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
@@ -13,8 +14,9 @@ class obj {
 
 class grid_system {
    public:
-    void addObj(obj object, unsigned x, unsigned y);
+    void addObj(obj &object, unsigned x, unsigned y);
     grid_system();
     std::vector<std::vector<obj>> grid;
     void render(sf::RenderWindow& window);
+    void movePos(unsigned x, unsigned y, sf::Vector2i &vMousePosition);
 };

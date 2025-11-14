@@ -1,40 +1,30 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
-#include "grid_system.h"
+#include "./include/grid_system.h"
 
 #define PATH "../../src"
 #define SPRITE(name) PATH "/Sprites/" name ".png"
 
-enum directions
-{
-    down,
-    right,
-    up,
-    left
-};
-enum windowstate
-{
-    WINDOWED,
-    FULLSCREEN
-};
+enum directions { down, right, up, left };
+enum windowstate { WINDOWED, FULLSCREEN };
 
-bool WindowState = FULLSCREEN;
+bool WindowState = WINDOWED;
 
-int main()
-{
+int main() {
     unsigned int width = 1920;
     unsigned int height = 1080;
 
-    sf::VideoMode mode = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(mode, "Puzzletorio", (WindowState ? sf::State::Fullscreen : sf::State::Windowed));
+    sf::VideoMode mode = sf::VideoMode({width, height});
+    sf::RenderWindow window(
+        mode, "Puzzletorio",
+        (WindowState ? sf::State::Fullscreen : sf::State::Windowed));
     window.setFramerateLimit(60);
 
     // Tile system
     sf::Texture tileTexture;
 
-    if (!tileTexture.loadFromFile(SPRITE("tile_32px")))
-    {
+    if (!tileTexture.loadFromFile(SPRITE("tile_32px"))) {
         std::cerr << "ERROR::COULD NOT LOAD FILE::Sprites/tile_32px.png"
                   << std::endl;
         return -1;
@@ -48,8 +38,7 @@ int main()
 
     sf::Texture tileHighlightedTexture;
 
-    if (!tileHighlightedTexture.loadFromFile(SPRITE("tile_highlighted_32px")))
-    {
+    if (!tileHighlightedTexture.loadFromFile(SPRITE("tile_highlighted_32px"))) {
         std::cerr
             << "ERROR::COULD NOT LOAD FILE::Sprites/tile_highlighted_32px.png"
             << std::endl;
@@ -64,8 +53,7 @@ int main()
     // Toolbar
     sf::Texture toolbarTexture;
 
-    if (!toolbarTexture.loadFromFile(SPRITE("toolbar_96px")))
-    {
+    if (!toolbarTexture.loadFromFile(SPRITE("toolbar_96px"))) {
         std::cerr << "ERROR::COULD NOT LOAD FILE::Sprites/toolbar_96px.png"
                   << std::endl;
         return -1;
@@ -86,57 +74,79 @@ int main()
     obj Iron_source("iron_source", "/block/iron_block.png");
 
     Grid.addObj(Hopper, 15, 6);
+    Grid.addObj(Hopper, 15, 9);
     Grid.addObj(Furnace, 15, 7);
     Grid.addObj(Iron_source, 15, 5);
     bool ctrlEnterPressed = false;
+
+    bool isPickedUp = false;
+    obj* pickedUp;
+    obj temp;
     // Main loop
-    while (window.isOpen())
-    {
-
-        while (const std::optional event = window.pollEvent())
-        {
-            if (event->is<sf::Event::Closed>())
-            {
-                window.close();
-            }
-            else if (const auto *keyPreseed =
-                         event->getIf<sf::Event::KeyPressed>())
-            {
-                if (keyPreseed->scancode == sf::Keyboard::Scancode::Escape)
-                {
-                    window.close();
-                }
-            }
-        }
-
-        bool shiftDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RShift);
+    while (window.isOpen()) {
+        bool shiftDown =
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LShift) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RShift);
         bool enterDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Enter);
 
-        if (shiftDown && enterDown && !ctrlEnterPressed)
-        {
+        if (shiftDown && enterDown && !ctrlEnterPressed) {
             ctrlEnterPressed = true;
-            window = sf::RenderWindow(mode, "Puzzletorio", (WindowState ? sf::State::Windowed : sf::State::Fullscreen));
+            window.create(
+                mode, "Puzzletorio",
+                (WindowState ? sf::State::Windowed : sf::State::Fullscreen));
             WindowState = !WindowState;
         }
-        if (!shiftDown || !enterDown)
-            ctrlEnterPressed = false;
+        if (!shiftDown || !enterDown) ctrlEnterPressed = false;
 
         // Highlight
         sf::Vector2i vMousePosition = sf::Mouse::getPosition(window);
         auto pos32 = sf::Vector2f((vMousePosition.x / 32) * 32,
                                   (vMousePosition.y / 32) * 32);
-        if (pos32.y < 960)
-        {
+        if (pos32.y < 960) {
             tileHighlighted.setPosition(pos32);
         }
 
+        while (const auto event = window.pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
+                window.close();
+            } else if (const auto* keyPreseed =
+                           event->getIf<sf::Event::KeyPressed>()) {
+                if (keyPreseed->scancode == sf::Keyboard::Scancode::Escape) {
+                    window.close();
+                }
+            }
+            if (const auto* mousePressed =
+                    event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mousePressed->button == sf::Mouse::Button::Left) {
+                    std::cout << "pressed" << std::endl;
+                    pickedUp = &(Grid.grid[vMousePosition.x / 32]
+                                          [vMousePosition.y / 32]);
+                    temp = *pickedUp;
+                }
+            }
+            if (const auto* mouseRelease =
+                    event->getIf<sf::Event::MouseButtonReleased>()) {
+                if (mouseRelease->button == sf::Mouse::Button::Left) {
+                    std::cout << "released" << std::endl;
+                    if (pickedUp->objTexture.getSize().x != 0) {
+                        Grid.movePos(pickedUp->objRect.getPosition().x / 32,
+                                     pickedUp->objRect.getPosition().y / 32,
+                                     vMousePosition);
+                    }
+                }
+            }
+        }
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+            temp.objRect.setPosition({vMousePosition.x-16, vMousePosition.y-16});
+        }
         // Render
         window.clear(sf::Color(0x404040FF));
 
         // Draw
         window.draw(tiledArea);
         window.draw(toolbarArea);
-        ;
+        window.draw(temp.objRect);
+        temp.objRect.setPosition({-32, -32});
 
         Grid.render(window);
 
