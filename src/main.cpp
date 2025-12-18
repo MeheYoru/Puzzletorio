@@ -57,12 +57,12 @@ int main() {
     TaskManager taskManager;
 
     std::vector<GameBlock> hotbarItems;
-    hotbarItems.emplace_back("furnace", "/block/furnace_front_on.png");
-    hotbarItems.emplace_back("crafter", "/block/crafter_top_crafting.png");
-    hotbarItems.emplace_back("hopper", "/item/hopper.png");
-    hotbarItems.emplace_back("pickaxe", "/item/diamond_pickaxe.png");
-    hotbarItems.emplace_back("iron_ore", "/block/iron_ore.png"); 
-    hotbarItems.emplace_back("coal_ore", "/block/coal_ore.png");
+    hotbarItems.emplace_back("furnace", "/Sprites/block/furnace_front_on.png");
+    hotbarItems.emplace_back("crafter", "/Sprites/block/crafter_top_crafting.png");
+    hotbarItems.emplace_back("hopper", "/Sprites/item/hopper.png");
+    hotbarItems.emplace_back("pickaxe", "/Sprites/item/diamond_pickaxe.png");
+    hotbarItems.emplace_back("iron_ore", "/Sprites/block/iron_ore.png"); 
+    hotbarItems.emplace_back("coal_ore", "/Sprites/block/coal_ore.png");
 
     int selectedSlot = -1;
     float slotSize = 80.f;
@@ -70,12 +70,11 @@ int main() {
 
     GameBlock ghostBlock; 
 
-    // === ЗАГРУЗКА ===
     GameSaver::load(worldGrid, "autosave.dat");
     taskManager.load("tasks.dat");
 
     if (worldGrid.gridMatrix[30][15].blockType.empty()) {
-        GameBlock targetBlock("target", "/block/target_top.png");
+        GameBlock targetBlock("target", "/Sprites/block/target_top.png");
         worldGrid.placeBlock(targetBlock, 30, 15);
     }
 
@@ -98,17 +97,13 @@ int main() {
         bool shiftDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RShift);
         bool enterDown = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Enter);
 
-        // === ПОЛНЫЙ СБРОС (SHIFT + R) ===
         if (shiftDown && sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::R)) {
             worldGrid.clear();
             taskManager.reset();
-            
-            GameBlock targetBlock("target", "/block/target_top.png");
+            GameBlock targetBlock("target", "/Sprites/block/target_top.png");
             worldGrid.placeBlock(targetBlock, 30, 15);
-
             std::remove("autosave.dat");
             std::remove("tasks.dat");
-
             draggedBlock = nullptr;
             selectedSlot = -1;
             std::cout << "GAME RESET COMPLETE" << std::endl;
@@ -143,15 +138,10 @@ int main() {
         }
 
         while (const auto event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                window.close();
-            } 
+            if (event->is<sf::Event::Closed>()) window.close();
             else if (const auto* keyEvent = event->getIf<sf::Event::KeyPressed>()) {
-                if (keyEvent->scancode == sf::Keyboard::Scancode::Escape) {
-                    window.close();
-                }
-                
-                // Проверка !shiftDown, чтобы R не срабатывало при ресете
+                if (keyEvent->scancode == sf::Keyboard::Scancode::Escape) window.close();
+
                 if (keyEvent->scancode == sf::Keyboard::Scancode::R && !shiftDown) { 
                     if (selectedSlot != -1) {
                         if (hotbarItems[selectedSlot].blockType != "furnace") {
@@ -212,29 +202,29 @@ int main() {
                 }
                 else if (isMouseInGameplayArea) {
                     if (gridX < worldGrid.gridMatrix.size() && gridY < worldGrid.gridMatrix[0].size()) {
-                        if (worldGrid.gridMatrix[gridX][gridY].blockType == "target") { /* Ничего */ }
-                        else if (mousePressed->button == sf::Mouse::Button::Left) {
-                            if (worldGrid.gridMatrix[gridX][gridY].textureName.empty()) {
-                                if (selectedSlot != -1) {
-                                    worldGrid.placeBlock(hotbarItems[selectedSlot], gridX, gridY);
-                                    selectedSlot = -1; 
-                                }
-                            } 
-                            else {
-                                draggedBlock = &(worldGrid.gridMatrix[gridX][gridY]);
+                        GameBlock& clickedBlock = worldGrid.gridMatrix[gridX][gridY];
+                        if (mousePressed->button == sf::Mouse::Button::Left) {
+                            if (selectedSlot != -1 && clickedBlock.textureName.empty()) {
+                                worldGrid.placeBlock(hotbarItems[selectedSlot], gridX, gridY);
+                                if (hotbarItems[selectedSlot].blockType != "pickaxe") selectedSlot = -1; 
+                            }
+                            else if (selectedSlot == -1 && !clickedBlock.textureName.empty() && clickedBlock.blockType != "target") {
+                                draggedBlock = &clickedBlock;
                                 tempBlock = *draggedBlock;
                             }
                         }
                         else if (mousePressed->button == sf::Mouse::Button::Middle) {
-                            GameBlock emptyBlock;
-                            worldGrid.placeBlock(emptyBlock, gridX, gridY);
+                            if (clickedBlock.blockType != "target") {
+                                GameBlock emptyBlock;
+                                worldGrid.placeBlock(emptyBlock, gridX, gridY);
+                            }
                         }
                     }
                 }
             } 
             else if (const auto* mouseRelease = event->getIf<sf::Event::MouseButtonReleased>()) {
                 if (mouseRelease->button == sf::Mouse::Button::Left) {
-                    if (draggedBlock && draggedBlock->textureName != "") { // Проверяем имя, а не getSize
+                    if (draggedBlock && draggedBlock->textureName != "") { 
                          if (mousePos.x < 1600 && mousePos.y < 960) {
                             worldGrid.swapBlocks(draggedBlock->blockShape.getPosition().x / 32, 
                                                  draggedBlock->blockShape.getPosition().y / 32, mousePos);
@@ -250,10 +240,8 @@ int main() {
         }
 
         window.clear(sf::Color(0x202020FF));
-        
         window.draw(tiledArea);
         window.draw(toolbarArea);
-        
         worldGrid.render(window);
         taskManager.render(window);
 
@@ -271,9 +259,7 @@ int main() {
         if (!draggedBlock && isMouseInGameplayArea && selectedSlot != -1) {
             window.draw(ghostBlock.blockShape);
         }
-
         if (isMouseInGameplayArea) window.draw(tileHighlighted);
-        
         if(sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && draggedBlock) {
              window.draw(tempBlock.blockShape);
         }

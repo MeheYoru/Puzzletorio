@@ -8,7 +8,6 @@
 
 class GameBlock {
 public:
-    // Текстура теперь хранится в кэше, блок хранит только шейп и имя
     sf::RectangleShape blockShape;
     std::string blockType;    
     std::string textureName;  
@@ -25,14 +24,11 @@ public:
     GameBlock() : rotationState(0), craftingProgress(0), fuelLevel(0) {};
 
     void setRotation(int rot);
-    // Конструктор копирования и оператор присваивания по умолчанию теперь работают корректно
 };
 
 class GridSystem {
 public:
     std::vector<std::vector<GameBlock>> gridMatrix;
-    
-    // Статический кэш текстур, чтобы они не пропадали при копировании блоков
     static std::map<std::string, sf::Texture> textureCache;
     static sf::Texture* getTexture(const std::string& name);
 

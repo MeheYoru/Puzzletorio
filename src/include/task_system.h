@@ -24,14 +24,9 @@ public:
 
     TaskManager() {
         fontLoaded = false;
-        std::string localPath = "./src/Fonts/Monocraft.ttc"; 
-        std::string buildPath = "../../src/Fonts/Monocraft.ttc";
-        
-        if (font.openFromFile(localPath)) fontLoaded = true;
-        else if (font.openFromFile(buildPath)) fontLoaded = true;
+        // Попытка загрузить стандартный шрифт
+        if (font.openFromFile("../../src/Fonts/Monocraft.ttc")) fontLoaded = true;
         else if (font.openFromFile("C:/Windows/Fonts/arial.ttf")) fontLoaded = true;
-
-        if (!fontLoaded) std::cerr << "[ERROR] Font not found!" << std::endl;
         
         addTask("iron_ingot", "Iron Ingot", 64);
         addTask("raw_iron", "Raw Iron", 32);
