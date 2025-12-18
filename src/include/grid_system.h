@@ -1,22 +1,45 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <iostream>
 #include <vector>
+#include <string>
+#include <map>
+#include "item.h"
+#include "task_system.h" 
 
+class GameBlock {
+public:
+    // Текстура теперь хранится в кэше, блок хранит только шейп и имя
+    sf::RectangleShape blockShape;
+    std::string blockType;    
+    std::string textureName;  
+    int rotationState;        
+    
+    Inventory inputInventory;       
+    Inventory outputInventory;      
+    Inventory fuelInventory;        
 
-class obj {
-   public:
-    sf::Texture objTexture;
-    sf::RectangleShape objRect;
-    obj(std::string type, std::string texName);
-    obj() {};
+    int craftingProgress;
+    float fuelLevel; 
+
+    GameBlock(std::string type, std::string texName);
+    GameBlock() : rotationState(0), craftingProgress(0), fuelLevel(0) {};
+
+    void setRotation(int rot);
+    // Конструктор копирования и оператор присваивания по умолчанию теперь работают корректно
 };
 
-class grid_system {
-   public:
-    void addObj(obj &object, unsigned x, unsigned y);
-    grid_system();
-    std::vector<std::vector<obj>> grid;
+class GridSystem {
+public:
+    std::vector<std::vector<GameBlock>> gridMatrix;
+    
+    // Статический кэш текстур, чтобы они не пропадали при копировании блоков
+    static std::map<std::string, sf::Texture> textureCache;
+    static sf::Texture* getTexture(const std::string& name);
+
+    GridSystem();
+    void placeBlock(GameBlock &block, unsigned gridX, unsigned gridY);
     void render(sf::RenderWindow& window);
-    void movePos(unsigned x, unsigned y, sf::Vector2i &vMousePosition);
+    void swapBlocks(unsigned gridX, unsigned gridY, sf::Vector2i &mousePosition);
+    void updateGameLogic(unsigned long long currentTick, TaskManager& taskManager); 
+    void clear();
 };
